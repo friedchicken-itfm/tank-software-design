@@ -14,10 +14,15 @@ import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
 import com.badlogic.gdx.maps.tiled.TmxMapLoader;
 import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.math.Interpolation;
+import ru.mipt.bit.platformer.model.Tank;
+import ru.mipt.bit.platformer.model.Tree;
 import ru.mipt.bit.platformer.util.TileMovement;
+import ru.mipt.bit.platformer.view.TankView;
+import ru.mipt.bit.platformer.view.TreeView;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.badlogic.gdx.graphics.GL20.GL_COLOR_BUFFER_BIT;
 import static ru.mipt.bit.platformer.util.GdxGameUtils.*;
@@ -26,51 +31,55 @@ public class GameDesktopLauncher implements ApplicationListener {
 
     private static final float MOVEMENT_SPEED = 0.4f;
 
+    // Графические компоненты
     private Batch batch;
     private TiledMap level;
     private MapRenderer levelRenderer;
     private TileMovement tileMovement;
-
-    // Текстуры остаются здесь, так как их нужно освобождать в dispose()
     private Texture blueTankTexture;
     private Texture greenTreeTexture;
 
-    // Уменьшаем количество сущнойтсей
+    // Модели
     private Tank player;
-    private Tree tree;
-    private final List<Tree> obstacles = new ArrayList<>();
+    private List<Tree> obstacles = new ArrayList<>();
 
+    // Представления
+    private TankView playerView;
+    private List<TreeView> obstacleViews;
+    
+    // Контроллер
+    private InputHandler inputHandler;
 
     @Override
     public void create() {
         batch = new SpriteBatch();
 
+        // Загрузка уровня и настройка рендеринга
         level = new TmxMapLoader().load("level.tmx");
         levelRenderer = createSingleLayerMapRenderer(level, batch);
         TiledMapTileLayer groundLayer = getSingleLayer(level);
         tileMovement = new TileMovement(groundLayer, Interpolation.smooth);
 
+        // Загрузка текстур
         blueTankTexture = new Texture("images/tank_blue.png");
-        player = new Tank(new GridPoint2(1, 1), new TextureRegion(blueTankTexture));
-
         greenTreeTexture = new Texture("images/greenTree.png");
-        tree = new Tree(new GridPoint2(1, 3), new TextureRegion(greenTreeTexture));
+
+        // Создание моделей
+        player = new Tank(new GridPoint2(1, 1));
+        Tree tree = new Tree(new GridPoint2(1, 3));
         obstacles.add(tree);
 
-        
-        moveRectangleAtTileCenter(groundLayer, tree.getRectangle(), tree.getCoordinates());
-    }
+        // Создание представлений
+        playerView = new TankView(player, new TextureRegion(blueTankTexture));
+        obstacleViews = obstacles.stream()
+                .map(t -> new TreeView(t, new TextureRegion(greenTreeTexture)))
+                .collect(Collectors.toList());
 
-    private void handleInput() {
-        
-        for (Direction direction : Direction.values()) {
-            for (int key : direction.getKeys()) {
-                if (Gdx.input.isKeyPressed(key)) {
-                    player.move(direction, obstacles);
-                    break; 
-                }
-            }
-        }
+        // Создание обработчика ввода
+        inputHandler = new InputHandler(player, obstacles);
+
+        // Начальное позиционирование
+        obstacleViews.forEach(view -> moveRectangleAtTileCenter(groundLayer, view.getRectangle(), view.gameObject.getCoordinates()));
     }
 
     @Override
@@ -80,21 +89,21 @@ public class GameDesktopLauncher implements ApplicationListener {
 
         float deltaTime = Gdx.graphics.getDeltaTime();
 
-        handleInput();
+        // Обработка ввода
+        inputHandler.handleInput();
 
-        //обновляем состояние
+        // Обновление состояния модели
         player.setMovementProgress(continueProgress(player.getMovementProgress(), deltaTime, MOVEMENT_SPEED));
         player.update();
 
-        // обновляем графику 
-        tileMovement.moveRectangleBetweenTileCenters(player.getRectangle(), player.getCoordinates(), player.getDestinationCoordinates(), player.getMovementProgress());
+        // Обновление графического представления
+        tileMovement.moveRectangleBetweenTileCenters(playerView.getRectangle(), player.getCoordinates(), player.getDestinationCoordinates(), player.getMovementProgress());
 
         levelRenderer.render();
 
         batch.begin();
-        // говорим объектам самим себя нарисовать
-        player.draw(batch, player.getRotation());
-        tree.draw(batch, 0f); 
+        playerView.draw(batch);
+        obstacleViews.forEach(view -> view.draw(batch));
         batch.end();
     }
 
@@ -106,7 +115,6 @@ public class GameDesktopLauncher implements ApplicationListener {
         batch.dispose();
     }
 
-    
     @Override
     public void resize(int width, int height) {}
 
