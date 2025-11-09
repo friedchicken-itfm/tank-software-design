@@ -9,12 +9,13 @@ public class GameConfig {
     
     // Настройки уровня
     public static final LevelGeneratorFactory.GeneratorType LEVEL_GENERATOR_TYPE = 
-        LevelGeneratorFactory.GeneratorType.FILE; // или RANDOM
+        LevelGeneratorFactory.GeneratorType.FILE;
     
     // Параметры для случайного генератора
     public static final int RANDOM_LEVEL_WIDTH = 10;
     public static final int RANDOM_LEVEL_HEIGHT = 8;
     public static final float RANDOM_OBSTACLE_DENSITY = 0.2f;
+    public static final int AI_TANK_COUNT = 3;
     
     // Параметры для файлового генератора
     public static final String LEVEL_FILE_NAME = "level1.txt";

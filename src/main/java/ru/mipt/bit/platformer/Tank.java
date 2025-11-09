@@ -3,7 +3,6 @@ package ru.mipt.bit.platformer.model;
 import com.badlogic.gdx.math.GridPoint2;
 import java.util.List;
 import static com.badlogic.gdx.math.MathUtils.isEqual;
-import static ru.mipt.bit.platformer.util.GdxGameUtils.continueProgress;
 
 public class Tank extends GameObject implements Movable {
     private final GridPoint2 destinationCoordinates;
@@ -17,19 +16,13 @@ public class Tank extends GameObject implements Movable {
         this.movementSpeed = movementSpeed;
     }
 
-    @Override
-    public void move(Direction direction, List<Obstacle> obstacles) {
+    // Новый метод для движения с проверкой коллизий
+    public void move(Direction direction, List<Obstacle> obstacles, List<Movable> tanks) {
         if (!isMoving()) {
             this.direction = direction;
             GridPoint2 nextTile = new GridPoint2(coordinates.x + direction.getDx(), coordinates.y + direction.getDy());
-
-            boolean collision = obstacles.stream()
-                    .anyMatch(obstacle -> obstacle.getCoordinates().equals(nextTile));
-                    
-            if (!collision) {
-                this.destinationCoordinates.set(nextTile);
-                this.movementProgress = 0f;
-            }
+            this.destinationCoordinates.set(nextTile);
+            this.movementProgress = 0f;
         }
     }
 
