@@ -19,6 +19,9 @@ public class GameConfig {
     
     // Параметры для файлового генератора
     public static final String LEVEL_FILE_NAME = "level1.txt";
+
+    public static final int DEFAULT_TANK_HEALTH = 100;
+    public static final boolean SHOW_HEALTH_BARS_BY_DEFAULT = false;
     
     private GameConfig() {
         // Utility class

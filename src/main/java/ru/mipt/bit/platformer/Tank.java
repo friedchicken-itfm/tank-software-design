@@ -9,53 +9,65 @@ public class Tank extends GameObject implements Movable {
     private float movementProgress = 1f;
     private Direction direction = Direction.RIGHT;
     private final float movementSpeed;
+    private int health;
+    private final int maxHealth;
 
     public Tank(GridPoint2 initialCoordinates, float movementSpeed) {
         super(initialCoordinates);
         this.destinationCoordinates = new GridPoint2(initialCoordinates);
         this.movementSpeed = movementSpeed;
+        this.maxHealth = (int) (Math.random() * 21) + 80; // Случайное здоровье от 80 до 100
+        this.health = maxHealth;
     }
 
-    // Новый метод для движения с проверкой коллизий
-    public void move(Direction direction, List<Obstacle> obstacles, List<Movable> tanks) {
-        if (!isMoving()) {
-            this.direction = direction;
-            GridPoint2 nextTile = new GridPoint2(coordinates.x + direction.getDx(), coordinates.y + direction.getDy());
+    public Tank(GridPoint2 initialCoordinates, float movementSpeed, int health) {
+        super(initialCoordinates);
+        this.destinationCoordinates = new GridPoint2(initialCoordinates);
+        this.movementSpeed = movementSpeed;
+        this.maxHealth = health;
+        this.health = health;
+    }
+
+    // Остальные методы остаются без изменений...
+
+    // Новые методы для управления здоровьем
+    public int getHealth() {
+        return health;
+    }
+
+    public int getMaxHealth() {
+        return maxHealth;
+    }
+
+    public void takeDamage(int damage) {
+        this.health = Math.max(0, health - damage);
+    }
+
+    public boolean isAlive() {
+        return health > 0;
+    }
+
+    public float getHealthPercentage() {
+        return (float) health / maxHealth;
+    }
+    public void move(Direction direction, List<Obstacle> obstacles, List<Movable> tanks, 
+                CollisionDetector collisionDetector, int levelWidth, int levelHeight) {
+    if (!isMoving() && isAlive()) {
+        this.direction = direction;
+        GridPoint2 nextTile = new GridPoint2(coordinates.x + direction.getDx(), 
+                                           coordinates.y + direction.getDy());
+        
+        // Проверка границ уровня
+        if (nextTile.x < 0 || nextTile.x >= levelWidth || 
+            nextTile.y < 0 || nextTile.y >= levelHeight) {
+            return;
+        }
+        
+        // Проверка коллизий
+        if (!collisionDetector.wouldCollide(nextTile, obstacles, this, tanks)) {
             this.destinationCoordinates.set(nextTile);
             this.movementProgress = 0f;
         }
     }
-
-    @Override
-    public void update(float deltaTime) {
-        if (isMoving()) {
-            movementProgress = continueProgress(movementProgress, deltaTime, movementSpeed);
-            if (isEqual(movementProgress, 1f)) {
-                coordinates.set(destinationCoordinates);
-            }
-        }
-    }
-
-    @Override
-    public boolean isMoving() {
-        return !isEqual(movementProgress, 1f);
-    }
-
-    // Геттеры
-    public GridPoint2 getDestinationCoordinates() {
-        return new GridPoint2(destinationCoordinates);
-    }
-    
-    @Override
-    public float getMovementProgress() {
-        return movementProgress;
-    }
-
-    public Direction getDirection() {
-        return direction;
-    }
-    
-    public float getMovementSpeed() {
-        return movementSpeed;
-    }
+}
 }

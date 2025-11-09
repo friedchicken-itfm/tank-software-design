@@ -33,4 +33,14 @@ public class CollisionDetector {
         }
         return false;
     }
+    public boolean wouldCollide(GridPoint2 position, List<Obstacle> obstacles, 
+                           Movable currentTank, List<Movable> tanks) {
+    // Проверка препятствий
+    if (wouldCollideWithObstacle(position, obstacles)) {
+        return true;
+    }
+    
+    // Проверка других танков
+    return wouldCollideWithTanks(currentTank, position, tanks);
+}
 }
