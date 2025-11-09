@@ -14,6 +14,9 @@ import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
 import com.badlogic.gdx.maps.tiled.TmxMapLoader;
 import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.math.Interpolation;
+import ru.mipt.bit.platformer.config.GameConfig;
+import ru.mipt.bit.platformer.model.Movable;
+import ru.mipt.bit.platformer.model.Obstacle;
 import ru.mipt.bit.platformer.model.Tank;
 import ru.mipt.bit.platformer.model.Tree;
 import ru.mipt.bit.platformer.util.TileMovement;
@@ -29,8 +32,6 @@ import static ru.mipt.bit.platformer.util.GdxGameUtils.*;
 
 public class GameDesktopLauncher implements ApplicationListener {
 
-    private static final float MOVEMENT_SPEED = 0.4f;
-
     // Графические компоненты
     private Batch batch;
     private TiledMap level;
@@ -39,9 +40,9 @@ public class GameDesktopLauncher implements ApplicationListener {
     private Texture blueTankTexture;
     private Texture greenTreeTexture;
 
-    // Модели
-    private Tank player;
-    private List<Tree> obstacles = new ArrayList<>();
+    // Модели (работаем через абстракции)
+    private Movable player;
+    private List<Obstacle> obstacles = new ArrayList<>();
 
     // Представления
     private TankView playerView;
@@ -64,18 +65,20 @@ public class GameDesktopLauncher implements ApplicationListener {
         blueTankTexture = new Texture("images/tank_blue.png");
         greenTreeTexture = new Texture("images/greenTree.png");
 
-        // Создание моделей
-        player = new Tank(new GridPoint2(1, 1));
-        Tree tree = new Tree(new GridPoint2(1, 3));
+        // Создание моделей через абстракции
+        player = new Tank(new GridPoint2(GameConfig.PLAYER_START_X, GameConfig.PLAYER_START_Y), 
+                         GameConfig.MOVEMENT_SPEED);
+        Tree tree = new Tree(new GridPoint2(GameConfig.TREE_X, GameConfig.TREE_Y));
         obstacles.add(tree);
 
         // Создание представлений
-        playerView = new TankView(player, new TextureRegion(blueTankTexture));
+        playerView = new TankView((Tank) player, new TextureRegion(blueTankTexture));
         obstacleViews = obstacles.stream()
-                .map(t -> new TreeView(t, new TextureRegion(greenTreeTexture)))
+                .filter(obstacle -> obstacle instanceof Tree)
+                .map(obstacle -> new TreeView((Tree) obstacle, new TextureRegion(greenTreeTexture)))
                 .collect(Collectors.toList());
 
-        // Создание обработчика ввода
+        // Создание обработчика ввода (работает с абстракциями)
         inputHandler = new InputHandler(player, obstacles);
 
         // Начальное позиционирование
@@ -93,11 +96,11 @@ public class GameDesktopLauncher implements ApplicationListener {
         inputHandler.handleInput();
 
         // Обновление состояния модели
-        player.setMovementProgress(continueProgress(player.getMovementProgress(), deltaTime, MOVEMENT_SPEED));
-        player.update();
+        player.update(deltaTime);
 
         // Обновление графического представления
-        tileMovement.moveRectangleBetweenTileCenters(playerView.getRectangle(), player.getCoordinates(), player.getDestinationCoordinates(), player.getMovementProgress());
+        tileMovement.moveRectangleBetweenTileCenters(playerView.getRectangle(), 
+            player.getCoordinates(), player.getDestinationCoordinates(), player.getMovementProgress());
 
         levelRenderer.render();
 
@@ -126,7 +129,7 @@ public class GameDesktopLauncher implements ApplicationListener {
 
     public static void main(String[] args) {
         Lwjgl3ApplicationConfiguration config = new Lwjgl3ApplicationConfiguration();
-        config.setWindowedMode(1280, 1024);
+        config.setWindowedMode(GameConfig.WINDOW_WIDTH, GameConfig.WINDOW_HEIGHT);
         new Lwjgl3Application(new GameDesktopLauncher(), config);
     }
 }

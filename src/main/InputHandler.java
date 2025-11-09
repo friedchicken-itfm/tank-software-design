@@ -1,30 +1,30 @@
 package ru.mipt.bit.platformer;
 
 import com.badlogic.gdx.Gdx;
-import ru.mipt.bit.platformer.model.Tank;
-import ru.mipt.bit.platformer.model.Tree;
+import ru.mipt.bit.platformer.model.Movable;
+import ru.mipt.bit.platformer.model.Obstacle;
 
 import java.util.List;
 
 public class InputHandler {
-    private final Tank playerTank;
-    private final List<Tree> obstacles;
+    private final Movable movable;
+    private final List<Obstacle> obstacles;
 
-    public InputHandler(Tank playerTank, List<Tree> obstacles) {
-        this.playerTank = playerTank;
+    public InputHandler(Movable movable, List<Obstacle> obstacles) {
+        this.movable = movable;
         this.obstacles = obstacles;
     }
 
     public void handleInput() {
-        if (playerTank.isMoving()) {
-            return; // Не обрабатываем новый ввод, пока танк движется
+        if (movable.isMoving()) {
+            return;
         }
         
         for (Direction direction : Direction.values()) {
             for (int key : direction.getKeys()) {
                 if (Gdx.input.isKeyPressed(key)) {
-                    playerTank.move(direction, obstacles);
-                    return; // Выходим после первого же нажатия
+                    movable.move(direction, obstacles);
+                    return;
                 }
             }
         }
