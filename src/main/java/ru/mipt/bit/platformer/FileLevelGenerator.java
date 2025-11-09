@@ -4,7 +4,9 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.math.GridPoint2;
 import ru.mipt.bit.platformer.model.Obstacle;
+import ru.mipt.bit.platformer.model.Tank;
 import ru.mipt.bit.platformer.model.Tree;
+import ru.mipt.bit.platformer.config.GameConfig;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,6 +21,7 @@ public class FileLevelGenerator implements LevelGenerator {
     @Override
     public LevelData generateLevel() {
         List<Obstacle> obstacles = new ArrayList<>();
+        List<Tank> aiTanks = new ArrayList<>();
         GridPoint2 playerStart = null;
 
         FileHandle fileHandle = Gdx.files.internal("levels/" + levelFileName);
@@ -49,6 +52,9 @@ public class FileLevelGenerator implements LevelGenerator {
                         }
                         playerStart = position;
                         break;
+                    case 'A':
+                        aiTanks.add(new Tank(position, GameConfig.MOVEMENT_SPEED));
+                        break;
                     case '_':
                         // Пустая клетка - ничего не делаем
                         break;
@@ -62,6 +68,6 @@ public class FileLevelGenerator implements LevelGenerator {
             throw new RuntimeException("No player start position (X) found in level file");
         }
 
-        return new LevelData(playerStart, obstacles, width, height);
+        return new LevelData(playerStart, obstacles, aiTanks, width, height);
     }
 }
