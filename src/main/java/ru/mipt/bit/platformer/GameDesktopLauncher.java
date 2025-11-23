@@ -273,4 +273,75 @@ public class GameDesktopLauncher implements ApplicationListener {
         config.setResizable(false);
         new Lwjgl3Application(new GameDesktopLauncher(), config);
     }
+    private Map<GameObject, GameObjectView> views = new HashMap<>();
+
+    @Override
+    public void create() {
+        batch = new SpriteBatch();
+        gameEngine = new GameEngine();
+        
+        // 1. ПОДПИСЫВАЕМСЯ: Графика слушает Логику
+        gameEngine.addListener(this);
+
+        // 2. Инициализация уровня (из LevelGenerator)
+        // Важно: LevelGenerator теперь должен не создавать View, а просто возвращать список GameObject,
+        // или мы добавляем их в engine вручную.
+        
+        Tank playerTank = new Tank(new GridPoint2(1, 1), 3);
+        // Это вызовет onObjectAdded и автоматически создаст View!
+        gameEngine.addGameObject(playerTank); 
+        
+        // Генерация деревьев и врагов...
+        // gameEngine.addGameObject(new Tree(...));
+    }
+
+    // --- Реализация LevelListener (Observer) ---
+
+    @Override
+    public void onObjectAdded(GameObject object) {
+        if (object instanceof Tank) {
+            views.put(object, new TankView((Tank) object)); // или TextureRegion
+        } else if (object instanceof Bullet) {
+            // Создаем картинку для пули
+            // views.put(object, new BulletView((Bullet) object)); 
+        } else if (object instanceof Tree) {
+            views.put(object, new TreeView((Tree) object));
+        }
+    }
+
+    @Override
+    public void onObjectRemoved(GameObject object) {
+        // Удаляем графическое представление
+        GameObjectView view = views.remove(object);
+        if (view != null) {
+            view.dispose(); // Если нужно освободить ресурсы
+        }
+    }
+
+    // --- Игровой цикл ---
+
+    @Override
+    public void render() {
+        float deltaTime = Gdx.graphics.getDeltaTime();
+        
+        // 1. Создание команд (InputHandler)
+        // Если нажат пробел -> new ShootCommand(playerTank, gameEngine).execute();
+        
+        // 2. Выполнение команд (уже произошло выше при нажатии)
+        
+        // 3. Логический тик
+        gameEngine.updateState(); 
+        
+        // 4. Отрисовка
+        Gdx.gl.glClearColor(0, 0, 0, 1);
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+        batch.begin();
+        
+        // Рисуем все активные views
+        for (GameObjectView view : views.values()) {
+            view.draw(batch); // Предполагаем, что у View есть метод draw
+        }
+        
+        batch.end();
+    }
 }
