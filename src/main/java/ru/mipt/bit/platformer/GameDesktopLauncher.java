@@ -344,4 +344,71 @@ public class GameDesktopLauncher implements ApplicationListener {
         
         batch.end();
     }
-}
+    ApplicationContext context = new AnnotationConfigApplicationContext(AppConfig.class);
+
+        // 2. Получаем готовый бин GameEngine из контейнера
+        // Spring уже создал его внутри себя
+        this.gameEngine = context.getBean(GameEngine.class);
+        
+        // 3. Получаем игрока (Танк), которого создал Spring
+        Tank playerTank = context.getBean(Tank.class);
+        
+        // --- КОНЕЦ ИЗМЕНЕНИЙ SPRING ---
+
+        // Настраиваем связь Observer (Графика слушает Логику)
+        // Важно сделать это ДО добавления объектов в движок, чтобы отрисовался начальный танк
+        gameEngine.addListener(this);
+
+        // Добавляем игрока в движок.
+        // Так как мы подписались строчкой выше, сработает onObjectAdded и танк нарисуется.
+        gameEngine.addGameObject(playerTank);
+
+        // Если у тебя есть генерация уровня (деревья, враги), её тоже лучше вызывать здесь
+        // или через отдельный бин LevelGenerator.
+        // initLevel(gameEngine); 
+    }
+
+    // ... Остальной код (onObjectAdded, onObjectRemoved, render) остается БЕЗ ИЗМЕНЕНИЙ ...
+    
+    @Override
+    public void onObjectAdded(GameObject object) {
+        if (object instanceof Tank) {
+            views.put(object, new TankView((Tank) object));
+        } else if (object instanceof Bullet) {
+            // views.put(object, new BulletView((Bullet) object));
+        } else if (object instanceof Tree) {
+             views.put(object, new TreeView((Tree) object));
+        }
+    }
+
+    @Override
+    public void onObjectRemoved(GameObject object) {
+        GameObjectView view = views.remove(object);
+        if (view != null) view.dispose();
+    }
+
+    @Override
+    public void render() {
+        // ... твой старый код рендера ...
+        // gameEngine.updateState(); и отрисовка
+        
+        // (Для примера, чтобы код был валидным, скопирую структуру)
+        float deltaTime = Gdx.graphics.getDeltaTime();
+        gameEngine.updateState(); 
+        
+        Gdx.gl.glClearColor(0, 0, 0, 1);
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+        batch.begin();
+        for (GameObjectView view : views.values()) {
+            view.draw(batch);
+        }
+        batch.end();
+    }
+
+    @Override
+    public void dispose() {
+        batch.dispose();
+        for (GameObjectView view : views.values()) {
+            view.dispose();
+        }
+    }
