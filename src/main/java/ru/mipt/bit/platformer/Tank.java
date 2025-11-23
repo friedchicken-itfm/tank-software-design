@@ -69,5 +69,29 @@ public class Tank extends GameObject implements Movable {
             this.movementProgress = 0f;
         }
     }
+    // ... существующие поля ...
+    private int health;
+    private GridPoint2 direction; // Ориентация танка
+
+    public Tank(GridPoint2 location, int maxHealth) {
+        super(location);
+        this.health = maxHealth;
+        this.direction = new GridPoint2(1, 0); // Начальное направление
+    }
+
+    public void takeDamage(int damage) {
+        this.health -= damage;
+    }
+
+    public boolean isAlive() {
+        return health > 0;
+    }
+
+    // Создает пулю перед танком
+    public Bullet shoot() {
+        // Рассчитываем координаты пули: текущая позиция + направление
+        GridPoint2 bulletPos = new GridPoint2(coordinates).add(direction);
+        return new Bullet(bulletPos, new GridPoint2(direction), this);
+    }
 }
 }
